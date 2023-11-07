@@ -6,7 +6,7 @@
       "name": "backend-lambda:index.handler (nodejs18.x)",
       "invokeTarget": {
         "target": "code",
-        "projectRoot": "${workspaceFolder}/",
+        "projectRoot": "${workspaceFolder}/dist",
         "lambdaHandler": "index.handler"
       },
       "lambda": {
