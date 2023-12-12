@@ -1,11 +1,9 @@
-import fs from "fs";
+import * as fs from "fs";
 import { sign } from 'jsonwebtoken';
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
+import { tokenEndpoint } from ".";
 import { TokenResponse } from "./TokenResponse";
-
-const EMR_TYPE = process.env.EMR_TYPE ?? '';
-const tokenEndpoint = process.env.TOKEN_ENDPOINT ?? '';
 
 export interface JWTBodyOptions {
   iss: string;
@@ -23,7 +21,7 @@ export function createJWT(clientId: string): string {
   const message: JWTBodyOptions = {
     iss: clientId,
     sub: clientId,
-    aud: tokenEndpoint.toString(),
+    aud: tokenEndpoint,
     jti: uuidv4(),
     nbf: tNow,
     iat: tNow,

@@ -13,6 +13,7 @@
     "call-bind": "^1.0.5",
     "commander": "^3.0.2",
     "define-data-property": "^1.1.1",
+    "dotenv": "^16.3.1",
     "esprima": "^4.0.1",
     "events": "^1.1.1",
     "for-each": "^0.3.3",
@@ -57,7 +58,7 @@
     "esbuild": "^0.19.5"
   },
   "scripts": {
-    "prebuild": "rm -rf dis",
+    "prebuild": "rm -rf dist",
     "build": "esbuild *.ts --bundle --minify --sourcemap --platform=node --outdir=dist/",
     "postbuild": "cd dist && cp ../private.key . && cp ../.env . && zip -r index.zip *.js* ../.env ../private.key",
     "test": "echo \"Error: no test specified\" && exit 1"

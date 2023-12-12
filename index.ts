@@ -1,5 +1,11 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { fetchBackendToken } from './TokenHandler';
+import * as dotenv from "dotenv";
+dotenv.config();
+
+
+const EMR_TYPE = process.env.EMR_TYPE;
+export const tokenEndpoint = process.env.TOKEN_ENDPOINT;
 
 export const handler = async (event: APIGatewayEvent, context: Context): Promise<APIGatewayProxyResult> => {
   console.log(`Event: ${JSON.stringify(event, null, 2)}`);
@@ -10,7 +16,7 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
   return {
     statusCode: 200,
     body: JSON.stringify({
-      message: 'hello world',
+      message: 'Result of token creation event attached in this body.',
       tokenResponse: tokenResponse
     }),
   };
