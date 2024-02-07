@@ -1,7 +1,7 @@
-import * as fs from "fs";
 import { sign } from 'jsonwebtoken';
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
+import SecretsManager = require("aws-sdk/clients/secretsmanager");
 import { tokenEndpoint } from ".";
 import { TokenResponse } from "./TokenResponse";
 
@@ -15,7 +15,21 @@ export interface JWTBodyOptions {
   iat: number | null;
 }
 
-export function createJWT(clientId: string): string {
+async function getPrivateKey(): Promise<string> {
+  const privateKeySecretId = process.env.PRIVATE_KEY_SECRET_ID;
+  if (!privateKeySecretId) {
+    throw new Error("PRIVATE_KEY_SECRET_ID is not set. It must be set to determine the secret to use for the private key.");
+  }
+  const client = new SecretsManager({ region: "ca-central-1" });
+  const data = await client.getSecretValue({ SecretId: privateKeySecretId }).promise();
+  if (data.SecretString) {
+    return data.SecretString;
+  } else {
+    throw new Error(`Secret referenced by environment variable "${privateKeySecretId}" not found`);
+  }
+}
+
+export async function createJWT(clientId: string): Promise<string> {
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
@@ -28,13 +42,12 @@ export function createJWT(clientId: string): string {
     exp: tEnd
   };
 
-  const privateKey = fs.readFileSync('private.key', 'utf8')
-  if (!privateKey) throw new Error('No Private Key provided. You must provide the privateKey explicitly as an env variable');
+  const privateKey = await getPrivateKey();
   const signature = sign(message, privateKey, { algorithm: 'RS384' });
   return signature;
 }
 export async function fetchBackendToken(clientId: string) {
-  const token = createJWT(clientId);
+  const token = await createJWT(clientId);
   const tokenResponse = await fetchAuthToken({
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
