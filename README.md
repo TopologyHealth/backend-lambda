@@ -9,3 +9,9 @@
 - Store the private key as plaintext in AWS Secrets Manager
 - Add permission to read that secret to the Lambda's execution role
 - Set the environment variable `PRIVATE_KEY_SECRET_ID` to the created secret's ID
+
+## Environment Variables
+- EMR_CLIENT_ID
+- EMR_TYPE
+- TOKEN_ENDPOINT
+- PRIVATE_KEY_SECRET_ID
