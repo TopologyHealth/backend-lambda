@@ -59,8 +59,8 @@
   },
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "esbuild *.ts --bundle --minify --sourcemap --platform=node --outdir=dist/",
-    "postbuild": "cd dist && cp ../.env . && zip -r index.zip *.js* ../.env",
+    "build": "esbuild *.ts --bundle --minify --sourcemap --platform=node --outdir=dist/ && tsc --declaration --emitDeclarationOnly",
+    "postbuild": "cp private.pem dist/ && cd dist && zip -r index.zip *.js*",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
