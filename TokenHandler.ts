@@ -6,7 +6,6 @@ import { TokenResponse } from "./TokenResponse";
 import SecretsManager = require("aws-sdk/clients/secretsmanager");
 
 export interface JWTBodyOptions {
-  kid: string;
   iss: string;
   sub: string;
   aud: string[] | string;
@@ -34,7 +33,6 @@ export async function createJWT(clientId: string): Promise<string> {
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
-    kid: process.env.KID ?? '',
     iss: clientId,
     sub: clientId,
     aud: tokenEndpoint,
@@ -44,8 +42,10 @@ export async function createJWT(clientId: string): Promise<string> {
     exp: tEnd
   };
 
+
+  const KID = process.env.KID ?? '';
   const privateKey = await getPrivateKey();
-  const signature = sign(message, privateKey, { algorithm: 'RS384' });
+  const signature = sign(message, privateKey, { algorithm: 'RS384', keyid: KID });
   return signature;
 }
 export async function fetchBackendToken(clientId: string) {
