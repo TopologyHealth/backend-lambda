@@ -12,7 +12,13 @@
       "lambda": {
         "runtime": "nodejs18.x",
         "payload": {},
-        "environmentVariables": {}
+        "environmentVariables": {
+          "PRIVATE_KEY_SECRET_ID": "Mindtrace_Epic_Backend_PrivateKey",
+          "EMR_CLIENT_ID": "452d82a4-c649-4b05-b470-dc0e7b94574a",
+          "EMR_TYPE": "epic",
+          "TOKEN_ENDPOINT": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
+          "KID": "pfp0wuh.WPB0zyf3exr",
+        }
       }
     }
   ]
