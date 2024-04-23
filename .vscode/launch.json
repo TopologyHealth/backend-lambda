@@ -13,12 +13,11 @@
         "runtime": "nodejs18.x",
         "payload": {},
         "environmentVariables": {
-          "PRIVATE_KEY_SECRET_ID": "Mindtrace_Epic_Backend_PrivateKey",
-          "EMR_CLIENT_ID": "452d82a4-c649-4b05-b470-dc0e7b94574a",
+          "PRIVATE_KEY_SECRET_ID": "josh/27590",
+          "EMR_CLIENT_ID": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
           "EMR_TYPE": "epic",
           "TOKEN_ENDPOINT": "https://kwfklwibs0.execute-api.ca-central-1.amazonaws.com",
-          "AUD": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
-          "KID": "68C68FAE09EF47FFCE795DAAB6875CFD3128A970",
+          "AUD": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
         }
       }
     }
