@@ -30,12 +30,13 @@ async function getPrivateKey(): Promise<string> {
 }
 
 export async function createJWT(clientId: string): Promise<string> {
+  const AUD = process.env.AUD ?? '';
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
     iss: clientId,
     sub: clientId,
-    aud: tokenEndpoint,
+    aud: AUD,
     jti: uuidv4(),
     nbf: tNow,
     iat: tNow,
@@ -65,7 +66,8 @@ export async function fetchAuthToken(params: { grant_type: string; } & Record<st
       accept: "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
-    body: new URLSearchParams(params)
+    body: new URLSearchParams(params),
+
   });
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
