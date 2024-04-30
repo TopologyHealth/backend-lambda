@@ -13,10 +13,10 @@
         "runtime": "nodejs18.x",
         "payload": {},
         "environmentVariables": {
-          "PRIVATE_KEY_SECRET_ID": "josh/27590",
-          "EMR_CLIENT_ID": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
+          "PRIVATE_KEY_SECRET_ID": "dev/reven/32320",
+          "EMR_CLIENT_ID": "5012bd22-bd23-42a1-8420-a23a590a0433",
           "EMR_TYPE": "epic",
-          "TOKEN_ENDPOINT": "https://kwfklwibs0.execute-api.ca-central-1.amazonaws.com",
+          "TOKEN_ENDPOINT": "https://ptrwwe35tj.execute-api.ca-central-1.amazonaws.com/epic",
           "AUD": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
         }
       }
