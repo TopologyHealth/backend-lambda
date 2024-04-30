@@ -1,9 +1,9 @@
 import { sign } from 'jsonwebtoken';
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
-import SecretsManager = require("aws-sdk/clients/secretsmanager");
 import { tokenEndpoint } from ".";
 import { TokenResponse } from "./TokenResponse";
+import SecretsManager = require("aws-sdk/clients/secretsmanager");
 
 export interface JWTBodyOptions {
   iss: string;
@@ -30,20 +30,23 @@ async function getPrivateKey(): Promise<string> {
 }
 
 export async function createJWT(clientId: string): Promise<string> {
+  const AUD = process.env.AUD ?? '';
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
     iss: clientId,
     sub: clientId,
-    aud: tokenEndpoint,
+    aud: AUD,
     jti: uuidv4(),
     nbf: tNow,
     iat: tNow,
     exp: tEnd
   };
 
+
+  const KID = process.env.KID ?? '';
   const privateKey = await getPrivateKey();
-  const signature = sign(message, privateKey, { algorithm: 'RS384' });
+  const signature = sign(message, privateKey, { algorithm: 'RS384', keyid: KID });
   return signature;
 }
 export async function fetchBackendToken(clientId: string) {
@@ -63,7 +66,8 @@ export async function fetchAuthToken(params: { grant_type: string; } & Record<st
       accept: "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
-    body: new URLSearchParams(params)
+    body: new URLSearchParams(params),
+
   });
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;

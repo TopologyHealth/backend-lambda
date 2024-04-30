@@ -25,7 +25,6 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
 async function initiateBackendAuth() {
   try {
     const emrClientID = process.env.EMR_CLIENT_ID ?? ''
-
     try {
       const tokenResponse = await fetchBackendToken(emrClientID);
       console.log('Token Response: ', tokenResponse);
