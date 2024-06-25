@@ -14,16 +14,14 @@
         "payload": {
           "json": {
             "headers": {
-              "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce"
+              "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
+              "emrType": "epic",
+              "apiId": "ptrwwe35tj"
             }
           }
         },
         "environmentVariables": {
-          "PRIVATE_KEY_SECRET_ID": "josh/27590",
-          "EMR_CLIENT_ID": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
-          "EMR_TYPE": "epic",
-          "TOKEN_ENDPOINT": "https://ptrwwe35tj.execute-api.ca-central-1.amazonaws.com/epic",
-          "AUD": "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
+          "PRIVATE_KEY_SECRET_ID": "josh/27590"
         }
       }
     }
