@@ -1,6 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { fetchBackendToken } from './TokenHandler';
 import * as dotenv from "dotenv";
+import { fetchBackendToken } from './TokenHandler';
 dotenv.config();
 
 
@@ -11,35 +11,30 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
   console.log(`Event: ${JSON.stringify(event, null, 2)}`);
   console.log(`Context: ${JSON.stringify(context, null, 2)}`);
 
-  const tokenResponse = await initiateBackendAuth();
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: 'Result of token creation event attached in this body.',
-      tokenResponse: tokenResponse
-    }),
-  };
+  
+  try {
+    const clientId = event.headers.clientId
+    if (!clientId) throw new Error('A clientId header must be included in the request')
+    const tokenResponse = await initiateBackendAuth(clientId);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Result of token creation event attached in this body.',
+        tokenResponse: tokenResponse
+      }),
+    };
+  } catch (e) {
+    if (e instanceof Error) {
+      return {
+        statusCode: 500,
+        body: e.message
+      }
+    }
+  }
 };
 
-async function initiateBackendAuth() {
-  try {
-    const emrClientID = process.env.EMR_CLIENT_ID ?? ''
-    try {
-      const tokenResponse = await fetchBackendToken(emrClientID);
-      console.log('Token Response: ', tokenResponse);
-      return tokenResponse
-    } catch (e) {
-      if (e instanceof Error) {
-        throw e;
-      }
-      throw new Error(`Unknown Error: ${e}`)
-    }
-  }
-  catch (e) {
-    if (e instanceof Error) {
-      throw e;
-    }
-    throw new Error(`Unknown Error: ${e}`)
-  }
+async function initiateBackendAuth(clientId: string) {
+  const tokenResponse = await fetchBackendToken(clientId);
+  console.log('Token Response: ', tokenResponse);
+  return tokenResponse
 }
