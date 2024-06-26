@@ -39,8 +39,8 @@ export async function createJWT(clientId: string, aud: string, eventRequestConte
 export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
   [name: string]: any;
 }>) {
-  const apiId = eventHeaders.apiId
-  assert(apiId, 'An apiId header must be included in the request')
+  const apiId = process.env.API_ID;
+  assert(apiId, 'An apiId env variable must be included in the request (for the token endpoint)')
   const emrType = eventHeaders.emrType
   assert(emrType, 'An emrType header must be included in the request')
   const clientId = eventHeaders.clientId

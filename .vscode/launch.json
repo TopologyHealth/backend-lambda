@@ -15,8 +15,7 @@
           "json": {
             "headers": {
               "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
-              "emrType": "epic",
-              "apiId": "ptrwwe35tj"
+              "emrType": "epic"
             },
             "requestContext": {
               "identity": {
@@ -25,7 +24,9 @@
             }
           }
         },
-        "environmentVariables": {}
+        "environmentVariables": {
+            "API_ID": "ptrwwe35tj"
+        }
       }
     }
   ]
