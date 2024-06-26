@@ -17,11 +17,15 @@
               "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
               "emrType": "epic",
               "apiId": "ptrwwe35tj"
+            },
+            "requestContext": {
+              "identity": {
+                "caller": "arn:aws:iam::105227342372:role/josh-epic-sandbox-71acdb69-token-getter",
+              }
             }
           }
         },
-        "environmentVariables": {
-        }
+        "environmentVariables": {}
       }
     }
   ]

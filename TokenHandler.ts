@@ -1,4 +1,4 @@
-import { APIGatewayProxyEventHeaders } from 'aws-lambda';
+import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEventHeaders } from 'aws-lambda';
 import { sign } from 'jsonwebtoken';
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
@@ -17,7 +17,9 @@ export interface JWTBodyOptions {
   iat: number | null;
 }
 
-export async function createJWT(clientId: string, aud: string): Promise<string> {
+export async function createJWT(clientId: string, aud: string, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
+  [name: string]: any;
+}>): Promise<string> {
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
@@ -29,14 +31,14 @@ export async function createJWT(clientId: string, aud: string): Promise<string> 
     iat: tNow,
     exp: tEnd
   };
-
-
-  const KID = process.env.KID ?? '';
-  const privateKey = await getPrivateKey(undefined)
-  const signature = sign(message, privateKey, { algorithm: 'RS384', keyid: KID });
+  const privateKey = await getPrivateKey(eventRequestContext)
+  const signature = sign(message, privateKey, { algorithm: 'RS384'});
   return signature;
 }
-export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders) {
+
+export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
+  [name: string]: any;
+}>) {
   const apiId = eventHeaders.apiId
   assert(apiId, 'An apiId header must be included in the request')
   const emrType = eventHeaders.emrType
@@ -45,7 +47,7 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   assert(clientId, 'A clientId header must be included in the request')
 
   const apiData = await getApiData(apiId, emrType)
-  const token = await createJWT(clientId, apiData.aud);
+  const token = await createJWT(clientId, apiData.aud, eventRequestContext);
   const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",

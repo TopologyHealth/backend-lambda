@@ -1,7 +1,8 @@
 import { IAMClient, ListRoleTagsCommand } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import { STSClient } from '@aws-sdk/client-sts';
+import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
+import assert = require('assert');
 
 const stsClient = new STSClient({});
 const iamClient = new IAMClient({});
@@ -24,22 +25,6 @@ const getSecretArnForRole = async (roleArn: string): Promise<string | null> => {
   }
 };
 
-const getCallerIdentity = async (event: APIGatewayProxyEvent) => {
-  const token = event.headers.Authorization?.split(' ')[1];
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const command = new GetCallerIdentityCommand({});
-    const response = await stsClient.send(command);
-    return response;
-  } catch (error) {
-    console.error('Error getting caller identity:', error);
-    return null;
-  }
-};
-
 export const getSecretValue = async (secretArn: string): Promise<string> => {
   try {
     const command = new GetSecretValueCommand({ SecretId: secretArn });
@@ -51,15 +36,17 @@ export const getSecretValue = async (secretArn: string): Promise<string> => {
   }
 };
 
-export async function getPrivateKey(event: APIGatewayProxyEvent) {
+export async function getPrivateKey(eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
+  [name: string]: any;
+}>) {
+  const getRole = () => {
+    if (!eventRequestContext || !eventRequestContext.identity || !eventRequestContext.identity.caller) {
+      throw new Error('Role failed to be determined from event identity.')
+    }
+    return eventRequestContext.identity.caller
+  }
 
-  //TODO: fix this when deployed
-  // const callerIdentity = await getCallerIdentity(event);
-  // if (!callerIdentity) {
-  //   return { statusCode: 403, body: JSON.stringify({ message: 'Forbidden' }) };
-  // }
-  const roleArn = "arn:aws:iam::105227342372:role/josh-epic-sandbox-71acdb69-token-getter" //callerIdentity.Arn;
-
+  const roleArn = getRole();
   const secretArn = await getSecretArnForRole(roleArn);
   if (!secretArn) {
     console.error('Error retrieving secret:', "Secret not found for the given role'");

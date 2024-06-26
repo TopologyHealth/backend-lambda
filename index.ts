@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyEventHeaders, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEvent, APIGatewayProxyEventHeaders, APIGatewayProxyResult, Context } from 'aws-lambda';
 import * as dotenv from "dotenv";
 import { fetchBackendToken } from './TokenHandler';
 dotenv.config();
@@ -8,7 +8,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
   console.log(`Context: ${JSON.stringify(context, null, 2)}`);
 
   try {
-    const tokenResponse = await initiateBackendAuth(event.headers);
+    const tokenResponse = await initiateBackendAuth(event.headers, event.requestContext);
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -18,7 +18,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
     };
   } catch (e) {
     if (e instanceof Error) {
-      console.error('Error: ', e)
+      console.error(e)
       return {
         statusCode: 500,
         body: 'Internal Server Error'
@@ -27,8 +27,10 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
   }
 };
 
-async function initiateBackendAuth(eventHeaders: APIGatewayProxyEventHeaders) {
-  const tokenResponse = await fetchBackendToken(eventHeaders);
+async function initiateBackendAuth(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
+  [name: string]: any;
+}>) {
+  const tokenResponse = await fetchBackendToken(eventHeaders, eventRequestContext);
   console.log('Token Response: ', tokenResponse);
   return tokenResponse
 }
