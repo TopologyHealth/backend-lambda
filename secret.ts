@@ -1,10 +1,7 @@
 import { IAMClient, ListRoleTagsCommand } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { STSClient } from '@aws-sdk/client-sts';
 import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
-import assert = require('assert');
 
-const stsClient = new STSClient({});
 const iamClient = new IAMClient({});
 export const secretsManagerClient = new SecretsManagerClient({});
 

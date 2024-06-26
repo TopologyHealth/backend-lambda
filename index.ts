@@ -1,6 +1,7 @@
 import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEvent, APIGatewayProxyEventHeaders, APIGatewayProxyResult, Context } from 'aws-lambda';
 import * as dotenv from "dotenv";
 import { fetchBackendToken } from './TokenHandler';
+import assert = require('assert');
 dotenv.config();
 require('source-map-support').install();
 
@@ -9,7 +10,11 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
   console.log(`Context: ${JSON.stringify(context, null, 2)}`);
 
   try {
-    const tokenResponse = await initiateBackendAuth(event.headers, event.requestContext);
+    const eventHeaders = event.headers;
+    assert(eventHeaders)
+    const requestContext = event.requestContext;
+    assert(requestContext)
+    const tokenResponse = await initiateBackendAuth(eventHeaders, requestContext);
     return {
       statusCode: 200,
       body: JSON.stringify({
