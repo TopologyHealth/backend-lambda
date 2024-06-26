@@ -46,6 +46,7 @@
     "querystring": "^0.2.0",
     "sax": "^1.2.1",
     "set-function-length": "^1.1.1",
+    "source-map-support": "^0.5.21",
     "sprintf-js": "^1.0.3",
     "typescript": "^5.2.2",
     "url": "^0.10.3",

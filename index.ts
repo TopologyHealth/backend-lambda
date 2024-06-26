@@ -2,6 +2,7 @@ import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEvent, APIG
 import * as dotenv from "dotenv";
 import { fetchBackendToken } from './TokenHandler';
 dotenv.config();
+require('source-map-support').install();
 
 export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   console.log(`Event: ${JSON.stringify(event, null, 2)}`);
