@@ -3,16 +3,17 @@ import assert = require("assert");
 
 const client = new ApiGatewayV2Client({ region: "ca-central-1" });
 
-async function getRoute(apiId: string, emrType: string): Promise<Route | undefined> {
+async function getRoute(apiId: string, emrType: string): Promise<Route> {
   const routes = await getRoutes(apiId)
   const routesItems = routes.Items;
   if (routesItems) {
     const emrRoute = routesItems.find(route => route.RouteKey.includes(emrType))
     if (emrRoute) return emrRoute
+    console.error('Invalid EMR Header: ', emrType)
   }
 }
 
-async function getRoutes(apiId: string): Promise<GetRoutesCommandOutput | undefined> {
+async function getRoutes(apiId: string): Promise<GetRoutesCommandOutput> {
   try {
     const input: GetRoutesCommandInput = {
       ApiId: apiId,
@@ -26,7 +27,7 @@ async function getRoutes(apiId: string): Promise<GetRoutesCommandOutput | undefi
   }
 }
 
-async function getIntegration(apiId: string, integrationId: string): Promise<GetIntegrationCommandOutput | undefined> {
+async function getIntegration(apiId: string, integrationId: string): Promise<GetIntegrationCommandOutput> {
   try {
     const input: GetIntegrationCommandInput = {
       ApiId: apiId,
@@ -41,7 +42,7 @@ async function getIntegration(apiId: string, integrationId: string): Promise<Get
   }
 }
 
-async function getApi(apiId: string): Promise<GetApiCommandOutput | undefined> {
+async function getApi(apiId: string): Promise<GetApiCommandOutput> {
   try {
     const input: GetApiCommandInput = {
       ApiId: apiId,
@@ -62,6 +63,7 @@ export async function getApiData(apiId: string, emrType: string) {
   assert(apiEndpoint)
 
   const route = await getRoute(apiId, emrType)
+  assert(route)
   const routeKey = route.RouteKey
   assert(routeKey)
   const routeEndpoint = routeKey.split('/').pop()

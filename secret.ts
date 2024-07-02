@@ -1,17 +1,15 @@
 import { IAMClient, ListRoleTagsCommand } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import assert = require('assert');
 import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
 
 const iamClient = new IAMClient({});
 export const secretsManagerClient = new SecretsManagerClient({});
 
 const getSecretArnForRole = async (roleArn: string): Promise<string | null> => {
-  const roleName = roleArn.split('/').pop();
-  if (!roleName) {
-    return null;
-  }
-
+  const roleName = roleArn.split('/')[1];
   try {
+    assert(roleName)
     const command = new ListRoleTagsCommand({ RoleName: roleName });
     const tags = await iamClient.send(command);
     const secretTag = tags.Tags?.find(tag => tag.Key === 'SecretAccess');
@@ -37,10 +35,10 @@ export async function getPrivateKey(eventRequestContext: APIGatewayEventRequestC
   [name: string]: any;
 }>) {
   const getRole = () => {
-    if (!eventRequestContext || !eventRequestContext.identity || !eventRequestContext.identity.caller) {
+    if (!eventRequestContext || !eventRequestContext.identity || !eventRequestContext.identity.userArn) {
       throw new Error('Role failed to be determined from event identity.')
     }
-    return eventRequestContext.identity.caller
+    return eventRequestContext.identity.userArn
   }
 
   const roleArn = getRole();

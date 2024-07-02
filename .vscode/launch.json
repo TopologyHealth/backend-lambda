@@ -19,13 +19,13 @@
             },
             "requestContext": {
               "identity": {
-                "caller": "arn:aws:iam::105227342372:role/josh-epic-sandbox-71acdb69-token-getter"
+                "userArn": "arn:aws:sts::105227342372:assumed-role/josh-epic-sandbox-71acdb69-token-getter/APIGatewaySession"
               }
             }
           }
         },
         "environmentVariables": {
-            "API_ID": "ptrwwe35tj"
+          "API_ID": "ptrwwe35tj"
         }
       }
     }
