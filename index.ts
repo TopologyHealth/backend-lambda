@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 
-const EMR_TYPE = process.env.EMR_TYPE;
+export const EMR_TYPE = process.env.EMR_TYPE;
 export const tokenEndpoint = process.env.TOKEN_ENDPOINT;
 
 export const handler = async (event: APIGatewayEvent, context: Context): Promise<APIGatewayProxyResult> => {
@@ -22,7 +22,7 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
   };
 };
 
-async function initiateBackendAuth() {
+export async function initiateBackendAuth() {
   try {
     const emrClientID = process.env.EMR_CLIENT_ID ?? ''
 
