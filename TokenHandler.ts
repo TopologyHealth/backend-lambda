@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
 import { TokenResponse } from "./TokenResponse";
 import { getApiData } from './gateway';
-import { getPrivateKey } from './secret';
+import { getPrivateKey, getRoleArn, getSecretArnForRole } from './secret';
 import assert = require('assert');
 
 export interface JWTBodyOptions {
@@ -17,9 +17,7 @@ export interface JWTBodyOptions {
   iat: number | null;
 }
 
-export async function createJWT(clientId: string, aud: string, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
-  [name: string]: any;
-}>): Promise<string> {
+export async function createJWT(clientId: string, aud: string, privateKey: string): Promise<string> {
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
@@ -31,14 +29,16 @@ export async function createJWT(clientId: string, aud: string, eventRequestConte
     iat: tNow,
     exp: tEnd
   };
-  const privateKey = await getPrivateKey(eventRequestContext)
   const signature = sign(message, privateKey, { algorithm: 'RS384'});
   return signature;
 }
 
 export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
   [name: string]: any;
-}>) {
+}>): Promise<{
+  tokenResponse: TokenResponse;
+  secretName: string;
+}> {
   const apiId = process.env.API_ID;
   assert(apiId, 'An apiId env variable must be included in the request (for the token endpoint)')
   const emrType = eventHeaders.emrType
@@ -47,13 +47,16 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   assert(clientId, 'A clientId header must be included in the request')
 
   const apiData = await getApiData(apiId, emrType)
-  const token = await createJWT(clientId, apiData.aud, eventRequestContext);
+  const roleArn = getRoleArn(eventRequestContext);
+  const secretArn = await getSecretArnForRole(roleArn);
+  const { privateKey, secretName } = await getPrivateKey(secretArn)
+  const token = await createJWT(clientId, apiData.aud, privateKey);
   const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     client_assertion: token
   });
-  return tokenResponse;
+  return {tokenResponse, secretName};
 }
 
 export async function fetchAuthToken(clientId: string, tokenEndpoint: string, params: { grant_type: string; } & Record<string, string>, authorization?: { Authorization: string; }) {

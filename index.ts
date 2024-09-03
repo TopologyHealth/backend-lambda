@@ -14,12 +14,13 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
     assert(eventHeaders)
     const requestContext = event.requestContext;
     assert(requestContext)
-    const tokenResponse = await initiateBackendAuth(eventHeaders, requestContext);
+    const {tokenResponse, secretName} = await initiateBackendAuth(eventHeaders, requestContext);
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Result of token creation event attached in this body.',
-        tokenResponse: tokenResponse
+        tokenResponse: tokenResponse,
+        secretName: secretName
       }),
     };
   } catch (e) {
@@ -36,7 +37,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 async function initiateBackendAuth(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
   [name: string]: any;
 }>) {
-  const tokenResponse = await fetchBackendToken(eventHeaders, eventRequestContext);
+  const {tokenResponse, secretName} = await fetchBackendToken(eventHeaders, eventRequestContext);
   console.log('Token Response: ', tokenResponse);
-  return tokenResponse
+  return {tokenResponse, secretName}
 }
