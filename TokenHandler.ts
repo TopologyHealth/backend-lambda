@@ -35,10 +35,7 @@ export async function createJWT(clientId: string, aud: string, privateKey: strin
 
 export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
   [name: string]: any;
-}>): Promise<{
-  tokenResponse: TokenResponse;
-  secretName: string;
-}> {
+}>){
   const apiId = process.env.API_ID;
   assert(apiId, 'An apiId env variable must be included in the request (for the token endpoint)')
   const emrType = eventHeaders.emrType
@@ -49,14 +46,14 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   const apiData = await getApiData(apiId, emrType)
   const roleArn = getRoleArn(eventRequestContext);
   const secretArn = await getSecretArnForRole(roleArn);
-  const { privateKey, secretName } = await getPrivateKey(secretArn)
+  const { privateKey, emrPath } = await getPrivateKey(secretArn)
   const token = await createJWT(clientId, apiData.aud, privateKey);
   const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     client_assertion: token
   });
-  return {tokenResponse, secretName};
+  return {tokenResponse, emrPath};
 }
 
 export async function fetchAuthToken(clientId: string, tokenEndpoint: string, params: { grant_type: string; } & Record<string, string>, authorization?: { Authorization: string; }) {

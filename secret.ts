@@ -1,7 +1,7 @@
 import { IAMClient, ListRoleTagsCommand } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, GetSecretValueCommandOutput, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import assert = require('assert');
 import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
+import assert = require('assert');
 
 const iamClient = new IAMClient({});
 export const secretsManagerClient = new SecretsManagerClient({});
@@ -43,8 +43,16 @@ export const getRoleArn = (eventRequestContext: APIGatewayEventRequestContextWit
 
 export async function getPrivateKey(secretArn: string) {
   const secret = await getSecret(secretArn);
+  const secretName = secret.Name;
+  const secretNameParts = secretName.split('/')
+  assert(secretNameParts.length === 2, "SecretName should be split by one slash")
+  const emrPath = {
+    customer: secretNameParts[0],
+    clientAppId: secretNameParts[1]
+  }
+
   return {
-    secretName: secret.Name,
+    emrPath,
     privateKey: secret.SecretString
   };
 }
