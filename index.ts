@@ -1,9 +1,9 @@
 import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEvent, APIGatewayProxyEventHeaders, APIGatewayProxyResult, Context } from 'aws-lambda';
 import * as dotenv from "dotenv";
 import { fetchBackendToken } from './TokenHandler';
-import assert = require('assert');
 dotenv.config();
 require('source-map-support').install();
+import assert = require('assert');
 
 export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   console.log(`Event: ${JSON.stringify(event, null, 2)}`);
@@ -11,10 +11,10 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 
   try {
     const eventHeaders = event.headers;
-    assert(eventHeaders)
+    assert(eventHeaders, "EventHeaders must be defined")
     const requestContext = event.requestContext;
-    assert(requestContext)
-    const {tokenResponse, emrPath} = await initiateBackendAuth(eventHeaders, requestContext);
+    assert(requestContext, "RequestContext must be defined")
+    const { tokenResponse, emrPath } = await initiateBackendAuth(eventHeaders, requestContext);
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -37,7 +37,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 async function initiateBackendAuth(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
   [name: string]: any;
 }>) {
-  const {tokenResponse, emrPath} = await fetchBackendToken(eventHeaders, eventRequestContext);
+  const { tokenResponse, emrPath } = await fetchBackendToken(eventHeaders, eventRequestContext);
   console.log('Token Response: ', tokenResponse);
-  return {tokenResponse, emrPath}
+  return { tokenResponse, emrPath }
 }

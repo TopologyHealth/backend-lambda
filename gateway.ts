@@ -6,79 +6,57 @@ const client = new ApiGatewayV2Client({ region: "ca-central-1" });
 async function getRoute(apiId: string, emrType: string): Promise<Route> {
   const routes = await getRoutes(apiId)
   const routesItems = routes.Items;
-  if (routesItems) {
-    const emrRoute = routesItems.find(route => route.RouteKey.includes(emrType))
-    if (emrRoute) return emrRoute
-    console.error('Invalid EMR Header: ', emrType)
-  }
+  const emrRoute = routesItems.find(route => route.RouteKey.includes(emrType))
+  assert(emrRoute, `No valid emrRoute found in ${JSON.stringify(routesItems)} for emrType '${emrType}'`)
+  return emrRoute
 }
 
 async function getRoutes(apiId: string): Promise<GetRoutesCommandOutput> {
-  try {
-    const input: GetRoutesCommandInput = {
-      ApiId: apiId,
-    };
-    const command = new GetRoutesCommand(input);
-    const response: GetRoutesCommandOutput = await client.send(command);
-    return response;
-  } catch (error) {
-    console.error("Error getting routes:", error);
-    return undefined;
-  }
+  const input: GetRoutesCommandInput = {
+    ApiId: apiId,
+  };
+  const command = new GetRoutesCommand(input);
+  const response: GetRoutesCommandOutput = await client.send(command);
+  return response;
 }
 
 async function getIntegration(apiId: string, integrationId: string): Promise<GetIntegrationCommandOutput> {
-  try {
-    const input: GetIntegrationCommandInput = {
-      ApiId: apiId,
-      IntegrationId: integrationId,
-    };
-    const command = new GetIntegrationCommand(input);
-    const response: GetIntegrationCommandOutput = await client.send(command);
-    return response;
-  } catch (error) {
-    console.error("Error getting integration:", error);
-    return undefined;
-  }
+  const input: GetIntegrationCommandInput = {
+    ApiId: apiId,
+    IntegrationId: integrationId,
+  };
+  const command = new GetIntegrationCommand(input);
+  const response: GetIntegrationCommandOutput = await client.send(command);
+  return response;
 }
 
 async function getApi(apiId: string): Promise<GetApiCommandOutput> {
-  try {
-    const input: GetApiCommandInput = {
-      ApiId: apiId,
-    };
-    const command = new GetApiCommand(input);
-    const response: GetApiCommandOutput = await client.send(command);
-    return response;
-  } catch (error) {
-    console.error("Error getting API:", error);
-    return undefined;
-  }
+  const input: GetApiCommandInput = {
+    ApiId: apiId,
+  };
+  const command = new GetApiCommand(input);
+  const response: GetApiCommandOutput = await client.send(command);
+  return response
 }
 
 
 export async function getApiData(apiId: string, emrType: string) {
   const api = await getApi(apiId)
   const apiEndpoint = api.ApiEndpoint;
-  assert(apiEndpoint)
-
   const route = await getRoute(apiId, emrType)
-  assert(route)
   const routeKey = route.RouteKey
-  assert(routeKey)
-  const routeEndpoint = routeKey.split('/').pop()
+  assert(routeKey.includes('/'), `RouteKey must include a '/' as part of the path. Instead: '${routeKey}'`)
 
+  const routeEndpoint = routeKey.split('/').pop()
   const invokeUrl = `${apiEndpoint}/${routeEndpoint}`;
 
   const routeTarget = route.Target
-  assert(routeTarget)
+  assert(routeTarget.includes('/'), `Route.Target must include a '/' as part of the path. Instead: '${routeTarget}'`)
 
   const integrationId = route.Target.split('/').pop();
-  assert(integrationId)
 
   const integration = await getIntegration(apiId, integrationId)
   const integrationUri = integration.IntegrationUri;
-  assert(integrationUri)
 
   return {
     invokeUrl: invokeUrl,
