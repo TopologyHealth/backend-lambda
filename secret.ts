@@ -38,7 +38,7 @@ async function getTagsFromRoleName(roleName: string) {
   return tags;
 }
 
-export async function getPrivateKey(secretArn: string) {
+export async function getSecretValueDetails(secretArn: string): Promise<{ emrPath: { customer: string, clientAppId: string }, secretValue: string }> {
   const secret = await getSecret(secretArn);
   const secretName = secret.Name;
   assert(secretName.includes('/'), `SecretName must include at least one slash. Instead: ${secretName}`)
@@ -50,6 +50,6 @@ export async function getPrivateKey(secretArn: string) {
   }
   return {
     emrPath,
-    privateKey: secret.SecretString
+    secretValue: secret.SecretString
   };
 }
