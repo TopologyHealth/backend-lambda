@@ -4,7 +4,6 @@
 ## Overview
 
 This repository contains an AWS Lambda function that handles EMR FHIR backend token management, interacts with an API gateway, and manages secrets. It is designed to be deployed on AWS and integrated with services like API Gateway and AWS Secrets Manager.
-
 Refer to the included [DOCS.md](./DOCS.md) for a more comprehensive overview
 
 ### File Structure
