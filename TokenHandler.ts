@@ -20,7 +20,7 @@ export interface JWTBodyOptions {
 }
 
 export async function createJWT(clientId: string, aud: string, roleTag: Tag): Promise<{
-  token: any, emrPath: {
+  token: string, emrPath: {
     customer: string;
     clientAppId: string;
   }
@@ -66,7 +66,10 @@ async function signJWTWithKMS(roleTag: Tag, message: JWTBodyOptions) {
   const tagValue = clientIdTag.TagValue;
   const emrPath = getEmrPath(tagValue);
   
-  return { token: response.Signature, emrPath };
+  const signatureAsUint8 = response.Signature;
+  const buff = Buffer.from(signatureAsUint8);
+  const signatureAsBase64 = buff.toString('base64');
+  return { token: signatureAsBase64, emrPath };
 }
 
 async function getKMSTags(kmsID: string, kmsClient: KMSClient) {
@@ -116,6 +119,8 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
     body: new URLSearchParams(params),
 
   });
+  console.log(params)
+  console.log(await tokenFetchResponse.text())
   if (!tokenFetchResponse.ok) throw new Error(JSON.stringify({ ...JSON.parse(await tokenFetchResponse.text()), clientId: clientId }))
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
