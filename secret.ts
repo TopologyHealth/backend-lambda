@@ -1,19 +1,21 @@
-import { IAMClient, ListRoleTagsCommand } from '@aws-sdk/client-iam';
+import { IAMClient, ListRoleTagsCommand, Tag } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, GetSecretValueCommandOutput, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
 import assert = require('assert');
 
 const iamClient = new IAMClient({});
 export const secretsManagerClient = new SecretsManagerClient({});
+const potentialTagKeys = ['SecretAccess', 'KMSAccess']
 
-export const getSecretArnForRole = async (roleArn: string): Promise<string> => {
+export const getTagForRole = async (roleArn: string): Promise<Tag> => {
   assert(roleArn.includes('/'), `RoleArn must include at least one '/'. Instead: ${roleArn}`)
   const roleName = roleArn.split('/')[1];
   const tags = await getTagsFromRoleName(roleName);
-  const secretTag = tags.find(tag => tag.Key === 'SecretAccess');
-  const secretTagValue = secretTag.Value
-  if (secretTagValue) return secretTagValue
-  throw new Error(`No Tag with key 'SecretAccess' found in tags: ${tags} for role: ${roleName}`)
+  const expectedTag: Tag = tags.find(tag => potentialTagKeys.includes(tag.Key))
+  // const secretTag = tags.find(tag => tag.Key === 'SecretAccess');
+  // const secretTagValue = secretTag.Value
+  if (expectedTag) return expectedTag
+  throw new Error(`No Tag with any key from ${potentialTagKeys} found in tags: ${tags} for role: ${roleName}`)
 };
 
 export const getSecret = async (secretArn: string): Promise<GetSecretValueCommandOutput> => {
@@ -41,15 +43,20 @@ async function getTagsFromRoleName(roleName: string) {
 export async function getPrivateKey(secretArn: string) {
   const secret = await getSecret(secretArn);
   const secretName = secret.Name;
-  assert(secretName.includes('/'), `SecretName must include at least one slash. Instead: ${secretName}`)
-  const secretNameParts = secretName.split('/')
-  assert(secretNameParts.length === 2, `SecretName should be split by one slash. Instead: ${secretName}`)
-  const emrPath = {
-    customer: secretNameParts[0],
-    clientAppId: secretNameParts[1]
-  }
+  const emrPath = getEmrPath(secretName);
   return {
     emrPath,
     privateKey: secret.SecretString
   };
+}
+
+export function getEmrPath(emrPathString: string) {
+  assert(emrPathString.includes('/'), `EmrPathString must include at least one slash. Instead: ${emrPathString}`);
+  const emrPathNameParts = emrPathString.split('/');
+  assert(emrPathNameParts.length === 2, `EmrPathString should be split by one slash. Instead: ${emrPathString}`);
+  const emrPath = {
+    customer: emrPathNameParts[0],
+    clientAppId: emrPathNameParts[1]
+  };
+  return emrPath;
 }

@@ -14,12 +14,12 @@
         "payload": {
           "json": {
             "headers": {
-              "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
-              "emrType": "epic"
+              "clientId": "2A8dx3enEMvE6C1LndbcxlmrnqdifFepP2CiaZxhC0k",
+              "emrType": "ecw-staging"
             },
             "requestContext": {
               "identity": {
-                "userArn": "arn:aws:sts::105227342372:assumed-role/josh-epic-sandbox-71acdb69-token-getter/APIGatewaySession"
+                "userArn": "arn:aws:sts::105227342372:assumed-role/josh-ecw-sandbox-2A8dx3en-token-getter/APIGatewaySession"
               }
             }
           }
