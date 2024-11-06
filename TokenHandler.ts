@@ -1,13 +1,13 @@
+import { Tag } from '@aws-sdk/client-iam';
+import { KMSClient, ListResourceTagsCommand, SignCommand, SignCommandInput, SignCommandOutput } from '@aws-sdk/client-kms';
 import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEventHeaders } from 'aws-lambda';
 import { sign } from 'jsonwebtoken';
-import fetch from "node-fetch";
+import fetch, { RequestInit } from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
 import { TokenResponse } from "./TokenResponse";
 import { getApiData } from './gateway';
 import { getEmrPath, getPrivateKey, getRoleArn, getTagForRole } from './secret';
 import assert = require('assert');
-import { Tag } from '@aws-sdk/client-iam';
-import { KMSClient, ListResourceTagsCommand, SignCommand, SignCommandInput, SignCommandOutput } from '@aws-sdk/client-kms';
 
 export interface JWTBodyOptions {
   iss: string;
@@ -36,13 +36,13 @@ export async function createJWT(clientId: string, aud: string, roleTag: Tag): Pr
     iat: tNow,
     exp: tEnd
   };
-  
+
   const tagKey = roleTag.Key;
   if (tagKey === 'SecretAccess') {
     return await signJWTWithSecret(roleTag, message);
   }
 
-  if (tagKey === 'KMSAccess'){
+  if (tagKey === 'KMSAccess') {
     return await signJWTWithKMS(roleTag, message);
   }
 
@@ -51,6 +51,9 @@ export async function createJWT(clientId: string, aud: string, roleTag: Tag): Pr
 
 async function signJWTWithKMS(roleTag: Tag, message: JWTBodyOptions) {
   const kmsID = roleTag.Value;
+
+  console.log("kmsId: ", kmsID)
+
   const kmsClient = new KMSClient({ region: "us-east-2" });
   const input: SignCommandInput = {
     KeyId: kmsID,
@@ -65,7 +68,7 @@ async function signJWTWithKMS(roleTag: Tag, message: JWTBodyOptions) {
   assert(clientIdTag, `No Tag found for KMS with ID ${kmsID} with key 'ClientID'`);
   const tagValue = clientIdTag.TagValue;
   const emrPath = getEmrPath(tagValue);
-  
+
   const signatureAsUint8 = response.Signature;
   const buff = Buffer.from(signatureAsUint8);
   const signatureAsBase64 = buff.toString('base64');
@@ -100,28 +103,34 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   const apiData = await getApiData(apiId, emrType)
   const roleArn = getRoleArn(eventRequestContext);
   const roleTag = await getTagForRole(roleArn);
-  const {token, emrPath} = await createJWT(clientId, apiData.aud, roleTag);
-  const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
+  const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
+
+  //TODO: Change this before continuing
+  const invokeUrl = "https://staging-oauthserver.ecwcloud.com/oauth/oauth2/token"
+
+  const tokenResponse = await fetchAuthToken(clientId, invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-    client_assertion: token
+    client_assertion: token,
+    scope: "system/Patient.read system/Group.read"
   });
   return { tokenResponse, emrPath };
 }
 
 export async function fetchAuthToken(clientId: string, tokenEndpoint: string, params: { grant_type: string; } & Record<string, string>, authorization?: { Authorization: string; }) {
-  const tokenFetchResponse = await fetch(tokenEndpoint, {
+  const fetchParams: RequestInit = {
     method: "POST",
     headers: {
       accept: "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
-    body: new URLSearchParams(params),
-
-  });
+    body: (new URLSearchParams(params)),
+  };
+  console.log('tokenEndpoint: ', tokenEndpoint)
+  console.log('fetchParams: ', fetchParams)
+  const tokenFetchResponse = await fetch(tokenEndpoint, fetchParams);
   console.log(params)
-  console.log(await tokenFetchResponse.text())
-  if (!tokenFetchResponse.ok) throw new Error(JSON.stringify({ ...JSON.parse(await tokenFetchResponse.text()), clientId: clientId }))
+  if (!tokenFetchResponse.ok) throw new Error(JSON.stringify({ status: await tokenFetchResponse.status, text: await tokenFetchResponse.text(), clientId: clientId }))
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
 }
