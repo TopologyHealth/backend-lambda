@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { TokenResponse } from "./TokenResponse";
 import { getApiData } from './gateway';
 import { getEmrPath, getPrivateKey, getRoleArn, getTagForRole } from './secret';
+
+import base64url from 'base64url';
 import assert = require('assert');
 
 export interface JWTBodyOptions {
@@ -49,16 +51,34 @@ export async function createJWT(clientId: string, aud: string, roleTag: Tag): Pr
   throw new Error(`Tag with key ${tagKey} is unsupported`)
 }
 
-async function signJWTWithKMS(roleTag: Tag, message: JWTBodyOptions) {
+async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOptions) {
   const kmsID = roleTag.Value;
 
   console.log("kmsId: ", kmsID)
 
+  const headers = {
+    "alg": "RS256",
+    "typ": "JWT",
+    "kid": kmsID
+  }
+
+  const clearTextMessage = {...headers, ...messagePayload}
+  console.log('Clear Message: ', clearTextMessage)
+
+  const token_components = {
+    header: base64url(JSON.stringify(headers)),
+    payload: base64url(JSON.stringify(messagePayload)),
+  };
+
+  const message = Buffer.from(token_components.header + "." + token_components.payload)
+
+
   const kmsClient = new KMSClient({ region: "us-east-2" });
   const input: SignCommandInput = {
     KeyId: kmsID,
-    Message: Buffer.from(JSON.stringify(message)), // e.g. Buffer.from("") or new TextEncoder().encode("")   // required
-    SigningAlgorithm: "RSASSA_PSS_SHA_384"
+    Message: message, // e.g. Buffer.from("") or new TextEncoder().encode("")   // required
+    SigningAlgorithm: "RSASSA_PSS_SHA_256",
+    MessageType: 'RAW'
   };
   const signCommand = new SignCommand(input);
   const response: SignCommandOutput = await kmsClient.send(signCommand);
@@ -69,9 +89,9 @@ async function signJWTWithKMS(roleTag: Tag, message: JWTBodyOptions) {
   const tagValue = clientIdTag.TagValue;
   const emrPath = getEmrPath(tagValue);
 
-  const signatureAsUint8 = response.Signature;
-  const buff = Buffer.from(signatureAsUint8);
-  const signatureAsBase64 = buff.toString('base64');
+  // const signatureAsUint8 = response.Signature;
+  // const buff = Buffer.from(signatureAsUint8);
+  const signatureAsBase64 = Buffer.from(response.Signature).toString('base64');
   return { token: signatureAsBase64, emrPath };
 }
 
@@ -103,10 +123,11 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   const apiData = await getApiData(apiId, emrType)
   const roleArn = getRoleArn(eventRequestContext);
   const roleTag = await getTagForRole(roleArn);
-  const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
-
   //TODO: Change this before continuing
   const invokeUrl = "https://staging-oauthserver.ecwcloud.com/oauth/oauth2/token"
+
+  const { token, emrPath } = await createJWT(clientId, invokeUrl, roleTag);
+
 
   const tokenResponse = await fetchAuthToken(clientId, invokeUrl, {
     grant_type: "client_credentials",
