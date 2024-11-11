@@ -136,7 +136,7 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
   const fetchParams: RequestInit = {
     method: "POST",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      accept: "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
     body: (new URLSearchParams(params)),
