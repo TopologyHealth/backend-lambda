@@ -8,7 +8,6 @@ import { TokenResponse } from "./TokenResponse";
 import { getApiData } from './gateway';
 import { getEmrPath, getPrivateKey, getRoleArn, getTagForRole } from './secret';
 
-import base64url from 'base64url';
 import assert = require('assert');
 
 export interface JWTBodyOptions {
@@ -57,27 +56,21 @@ async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOptions) {
   console.log("kmsId: ", kmsID)
 
   const headers = {
-    "alg": "RS256",
+    "alg": "RS384",
     "typ": "JWT",
     "kid": kmsID
   }
 
-  const clearTextMessage = {...headers, ...messagePayload}
-  console.log('Clear Message: ', clearTextMessage)
-
-  const token_components = {
-    header: base64url(JSON.stringify(headers)),
-    payload: base64url(JSON.stringify(messagePayload)),
-  };
-
-  const message = Buffer.from(token_components.header + "." + token_components.payload)
-
+  const encodedHeader = toBase64Url(headers)
+  const encodedPayload = toBase64Url(messagePayload)
+  const message = `${encodedHeader}.${encodedPayload}`;
+  const messageBuffer = Buffer.from(message);
 
   const kmsClient = new KMSClient({ region: "us-east-2" });
   const input: SignCommandInput = {
     KeyId: kmsID,
-    Message: message, // e.g. Buffer.from("") or new TextEncoder().encode("")   // required
-    SigningAlgorithm: "RSASSA_PSS_SHA_256",
+    Message: messageBuffer,
+    SigningAlgorithm: "RSASSA_PKCS1_V1_5_SHA_384",
     MessageType: 'RAW'
   };
   const signCommand = new SignCommand(input);
@@ -89,10 +82,10 @@ async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOptions) {
   const tagValue = clientIdTag.TagValue;
   const emrPath = getEmrPath(tagValue);
 
-  // const signatureAsUint8 = response.Signature;
-  // const buff = Buffer.from(signatureAsUint8);
-  const signatureAsBase64 = Buffer.from(response.Signature).toString('base64');
-  return { token: signatureAsBase64, emrPath };
+  const signatureBase64Url = Buffer.from(response.Signature).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const jwt = `${encodedHeader}.${encodedPayload}.${signatureBase64Url}`;
+
+  return { token: jwt, emrPath };
 }
 
 async function getKMSTags(kmsID: string, kmsClient: KMSClient) {
@@ -128,6 +121,7 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
 
   const { token, emrPath } = await createJWT(clientId, invokeUrl, roleTag);
 
+  console.log(token)
 
   const tokenResponse = await fetchAuthToken(clientId, invokeUrl, {
     grant_type: "client_credentials",
@@ -142,7 +136,7 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
   const fetchParams: RequestInit = {
     method: "POST",
     headers: {
-      accept: "application/x-www-form-urlencoded",
+      "Content-Type": "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
     body: (new URLSearchParams(params)),
@@ -151,8 +145,19 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
   console.log('fetchParams: ', fetchParams)
   const tokenFetchResponse = await fetch(tokenEndpoint, fetchParams);
   console.log(params)
-  if (!tokenFetchResponse.ok) throw new Error(JSON.stringify({ status: await tokenFetchResponse.status, text: await tokenFetchResponse.text(), clientId: clientId }))
+  if (!tokenFetchResponse.ok) throw new Error(JSON.stringify(
+    {
+      status: tokenFetchResponse.status,
+      text: await tokenFetchResponse.text(),
+      statusText: tokenFetchResponse.statusText,
+      clientId: clientId
+    }
+  ))
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
 }
 
+function toBase64Url(obj: object): string {
+  const json = JSON.stringify(obj);
+  return Buffer.from(json).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
