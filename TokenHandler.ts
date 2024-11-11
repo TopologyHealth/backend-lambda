@@ -119,7 +119,7 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   //TODO: Change this before continuing
   const invokeUrl = "https://staging-oauthserver.ecwcloud.com/oauth/oauth2/token"
 
-  const { token, emrPath } = await createJWT(clientId, invokeUrl, roleTag);
+  const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
 
   console.log(token)
 
