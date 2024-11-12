@@ -116,14 +116,12 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   const apiData = await getApiData(apiId, emrType)
   const roleArn = getRoleArn(eventRequestContext);
   const roleTag = await getTagForRole(roleArn);
-  //TODO: Change this before continuing
-  const invokeUrl = "https://staging-oauthserver.ecwcloud.com/oauth/oauth2/token"
 
   const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
 
   console.log(token)
 
-  const tokenResponse = await fetchAuthToken(clientId, invokeUrl, {
+  const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     client_assertion: token,

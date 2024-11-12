@@ -1,7 +1,7 @@
 import { ApiGatewayV2Client, GetApiCommand, GetApiCommandInput, GetApiCommandOutput, GetIntegrationCommand, GetIntegrationCommandInput, GetIntegrationCommandOutput, GetRoutesCommand, GetRoutesCommandInput, GetRoutesCommandOutput, Route } from "@aws-sdk/client-apigatewayv2";
 import assert = require("assert");
 
-const client = new ApiGatewayV2Client({ region: "ca-central-1" });
+const client = new ApiGatewayV2Client({ region: process.env.REGION ?? "ca-central-1" });
 
 async function getRoute(apiId: string, emrType: string): Promise<Route> {
   const routes = await getRoutes(apiId)

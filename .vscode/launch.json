@@ -25,7 +25,8 @@
           }
         },
         "environmentVariables": {
-          "API_ID": "ptrwwe35tj"
+          "API_ID": "1bl3p7pq76",
+          "REGION": "us-east-2"
         }
       }
     }
