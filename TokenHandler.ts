@@ -53,8 +53,6 @@ export async function createJWT(clientId: string, aud: string, roleTag: Tag): Pr
 async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOptions) {
   const kmsID = roleTag.Value;
 
-  console.log("kmsId: ", kmsID)
-
   const headers = {
     "alg": "RS384",
     "typ": "JWT",
@@ -119,8 +117,6 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
 
   const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
 
-  console.log(token)
-
   const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
@@ -139,10 +135,8 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
     },
     body: (new URLSearchParams(params)),
   };
-  console.log('tokenEndpoint: ', tokenEndpoint)
-  console.log('fetchParams: ', fetchParams)
+
   const tokenFetchResponse = await fetch(tokenEndpoint, fetchParams);
-  console.log(params)
   if (!tokenFetchResponse.ok) throw new Error(JSON.stringify(
     {
       status: tokenFetchResponse.status,
