@@ -12,6 +12,8 @@ This repository contains an AWS Lambda function that handles EMR FHIR backend to
 - **gateway.ts**: Manages API Gateway interactions.
 - **index.ts**: The main entry point for the Lambda function. This is where the logic to handle incoming requests begins.
 - **secret.ts**: Manages interaction with secrets, likely from AWS Secrets Manager.
+- **KMS.ts**: Manages interaction with AWS Key Management Service.
+- **utils.ts**: Utilities for manipulating objects
 - **package.json**: Contains project dependencies and scripts.
 - **tsconfig.json** & **aws-toolkit-tsconfig.json**: TypeScript configuration files for the project.
 - **launch.json**: A file used to pass the event object into the Lambda function during local testing, allowing for easy debugging in an IDE like VSCode.
@@ -37,7 +39,11 @@ The `launch.json` file is used to simulate AWS Lambda events locally during deve
     "identity": {
       "userArn": "arn:aws:sts::105227342372:assumed-role/josh-epic-sandbox-71acdb69-token-getter/APIGatewaySession"
     }
-  }
+  },
+    "environmentVariables": {
+      "API_ID": "********",
+      "REGION": "us-east-2"
+    }
 }
 ```
 
@@ -76,6 +82,19 @@ Here is an example of the permissions required for the Lambda function:
             "Effect": "Allow",
             "Action": "secretsmanager:GetSecretValue",
             "Resource": "arn:aws:secretsmanager:<region>:<account-id>:secret:<secret-name>"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iam:ListRoleTags",
+            "Resource": "arn:aws:iam::<account-id>:role/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+              "kms:ListResourceTags",
+              "kms:Sign"
+            ],
+            "Resource": "arn:aws:kms:<region>:<account-id>:key/*"
         },
         {
             "Effect": "Allow",
