@@ -1,12 +1,11 @@
 import { Tag } from '@aws-sdk/client-iam';
-import { KMSClient, ListResourceTagsCommand, SignCommand, SignCommandInput, SignCommandOutput } from '@aws-sdk/client-kms';
 import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEventHeaders } from 'aws-lambda';
-import { sign } from 'jsonwebtoken';
 import fetch, { RequestInit } from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
+import { signJWTWithKMS } from './KMS';
 import { TokenResponse } from "./TokenResponse";
 import { getApiData } from './gateway';
-import { getEmrPath, getPrivateKey, getRoleArn, getTagForRole } from './secret';
+import { getRoleArn, getTagForRole, signJWTWithSecret } from './secret';
 
 import assert = require('assert');
 
@@ -48,57 +47,6 @@ export async function createJWT(clientId: string, aud: string, roleTag: Tag): Pr
   }
 
   throw new Error(`Tag with key ${tagKey} is unsupported`)
-}
-
-async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOptions) {
-  const kmsID = roleTag.Value;
-
-  const headers = {
-    "alg": "RS384",
-    "typ": "JWT",
-    "kid": kmsID
-  }
-
-  const encodedHeader = toBase64Url(headers)
-  const encodedPayload = toBase64Url(messagePayload)
-  const message = `${encodedHeader}.${encodedPayload}`;
-  const messageBuffer = Buffer.from(message);
-
-  const kmsClient = new KMSClient({ region: "us-east-2" });
-  const input: SignCommandInput = {
-    KeyId: kmsID,
-    Message: messageBuffer,
-    SigningAlgorithm: "RSASSA_PKCS1_V1_5_SHA_384",
-    MessageType: 'RAW'
-  };
-  const signCommand = new SignCommand(input);
-  const response: SignCommandOutput = await kmsClient.send(signCommand);
-
-  const tags = await getKMSTags(kmsID, kmsClient);
-  const clientIdTag = tags.find(tag => tag.TagKey === 'ClientID');
-  assert(clientIdTag, `No Tag found for KMS with ID ${kmsID} with key 'ClientID'`);
-  const tagValue = clientIdTag.TagValue;
-  const emrPath = getEmrPath(tagValue);
-
-  const signatureBase64Url = Buffer.from(response.Signature).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const jwt = `${encodedHeader}.${encodedPayload}.${signatureBase64Url}`;
-
-  return { token: jwt, emrPath };
-}
-
-async function getKMSTags(kmsID: string, kmsClient: KMSClient) {
-  const listTagsCommand = new ListResourceTagsCommand({ KeyId: kmsID });
-  const kmsTagsList = await kmsClient.send(listTagsCommand);
-  const tags = kmsTagsList.Tags;
-  return tags;
-}
-
-async function signJWTWithSecret(roleTag: Tag, message: JWTBodyOptions) {
-  const secretArn = roleTag.Value;
-  const { privateKey, emrPath } = await getPrivateKey(secretArn);
-
-  const signature = sign(message, privateKey, { algorithm: 'RS384' });
-  return { token: signature, emrPath };
 }
 
 export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
@@ -147,9 +95,4 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
   ))
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
-}
-
-function toBase64Url(obj: object): string {
-  const json = JSON.stringify(obj);
-  return Buffer.from(json).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }

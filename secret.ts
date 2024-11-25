@@ -1,7 +1,10 @@
 import { IAMClient, ListRoleTagsCommand, Tag } from '@aws-sdk/client-iam';
 import { GetSecretValueCommand, GetSecretValueCommandOutput, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { APIGatewayEventRequestContextWithAuthorizer } from 'aws-lambda';
+import { sign } from 'jsonwebtoken';
+import { JWTBodyOptions } from './TokenHandler';
 import assert = require('assert');
+import { getEmrPath } from './utils';
 
 const iamClient = new IAMClient({});
 export const secretsManagerClient = new SecretsManagerClient({});
@@ -50,13 +53,10 @@ export async function getPrivateKey(secretArn: string) {
   };
 }
 
-export function getEmrPath(emrPathString: string) {
-  assert(emrPathString.includes('/'), `EmrPathString must include at least one slash. Instead: ${emrPathString}`);
-  const emrPathNameParts = emrPathString.split('/');
-  assert(emrPathNameParts.length === 2, `EmrPathString should be split by one slash. Instead: ${emrPathString}`);
-  const emrPath = {
-    customer: emrPathNameParts[0],
-    clientAppId: emrPathNameParts[1]
-  };
-  return emrPath;
+export async function signJWTWithSecret(roleTag: Tag, message: JWTBodyOptions) {
+  const secretArn = roleTag.Value;
+  const { privateKey, emrPath } = await getPrivateKey(secretArn);
+
+  const signature = sign(message, privateKey, { algorithm: 'RS384' });
+  return { token: signature, emrPath };
 }
