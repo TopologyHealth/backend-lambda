@@ -146,7 +146,7 @@ Detailed Documentation on how to use the Backend Lambda function is in progress 
 
 ## Contributing
 
-Contributions to the is welcome! If you encounter any issues or have suggestions for improvement, please submit a GitHub issue or pull request.
+Contributions to the project is welcome! If you encounter any issues or have suggestions for improvement, please submit a GitHub issue or pull request.
 
 Before contributing, please review the guidelines and code of conduct outlined in the repository:
 
