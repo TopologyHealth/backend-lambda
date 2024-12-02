@@ -140,6 +140,42 @@ Here is an example of the permissions required for the Lambda function:
 - Ensure that your IAM role attached to this Lambda function has the correct permissions to access the API Gateway and AWS Secrets Manager.
 - This Lambda function is written in TypeScript. Make sure that all TypeScript files are properly compiled before deploying.
 
-### License
+## Documentation
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Detailed Documentation on how to use the Backend Lambda function is in progress and will be posted on our [Docs](https://docs.topology.health) page.
+
+## Contributing
+
+Contributions to the project is welcome! If you encounter any issues or have suggestions for improvement, please submit a GitHub issue or pull request.
+
+Before contributing, please review the guidelines and code of conduct outlined in the repository:
+
+### Ground Rules
+
+#### Contributions and discussion guidelines
+
+By making a contribution to this project, you are deemed to have accepted the [Developer Certificate of Origin](https://developercertificate.org/) (DCO).
+
+All conversations and communities that use this code agree to GitHub's [Community Guidelines](https://help.github.com/en/github/site-policy/github-community-guidelines) and [Acceptable Use Policies](https://help.github.com/en/github/site-policy/github-acceptable-use-policies). This code of conduct also applies to all conversations that happen within our contributor community here on GitHub. We expect discussions in issues and pull requests to stay positive, productive, and respectful.
+#### Reporting a bug or discussing a feature idea
+
+If you found a technical bug in the library or have ideas for features we should implement, the issue tracker is the best place to share your ideas. Make sure to follow the issue template ([click here to open a new issue](https://github.com/TopologyHealth/backend-lambda/issues/new))
+
+#### Fixing a bug or implementing a new feature
+
+If you find a bug in the code and open a PR that fixes it, we'll review it as soon as possible to ensure it matches our engineering standards.
+
+If you want to implement a new feature, open an issue first to discuss what it'd look like and to ensure it fits in our roadmap and plans for the app.
+
+## License
+
+This code is released under the [Apache 2.0 License](https://opensource.org/license/apache-2-0/). You are free to use, modify, and distribute this library in accordance with the terms of the license.
+
+## Acknowledgments
+
+We would like to express our gratitude to the developers and contributors who have made the work possible. Their hard work and dedication are greatly appreciated.
+
+## About
+
+The code is developed and maintained by [Topology Health](https://topology.health). For inquiries, please contact [info@topology.health](mailto:info@topology.health)
+
