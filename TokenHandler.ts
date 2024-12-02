@@ -1,9 +1,13 @@
-import { sign } from 'jsonwebtoken';
-import fetch from "node-fetch";
+import { Tag } from '@aws-sdk/client-iam';
+import { APIGatewayEventRequestContextWithAuthorizer, APIGatewayProxyEventHeaders } from 'aws-lambda';
+import fetch, { RequestInit } from "node-fetch";
 import { v4 as uuidv4 } from 'uuid';
-import SecretsManager = require("aws-sdk/clients/secretsmanager");
-import { tokenEndpoint } from ".";
+import { signJWTWithKMS } from './KMS';
 import { TokenResponse } from "./TokenResponse";
+import { getApiData } from './gateway';
+import { getRoleArn, getTagForRole, signJWTWithSecret } from './secret';
+
+import assert = require('assert');
 
 export interface JWTBodyOptions {
   iss: string;
@@ -15,57 +19,80 @@ export interface JWTBodyOptions {
   iat: number | null;
 }
 
-async function getPrivateKey(): Promise<string> {
-  const privateKeySecretId = process.env.PRIVATE_KEY_SECRET_ID;
-  if (!privateKeySecretId) {
-    throw new Error("PRIVATE_KEY_SECRET_ID is not set. It must be set to determine the secret to use for the private key.");
+export async function createJWT(clientId: string, aud: string, roleTag: Tag): Promise<{
+  token: string, emrPath: {
+    customer: string;
+    clientAppId: string;
   }
-  const client = new SecretsManager({ region: "ca-central-1" });
-  const data = await client.getSecretValue({ SecretId: privateKeySecretId }).promise();
-  if (data.SecretString) {
-    return data.SecretString;
-  } else {
-    throw new Error(`Secret referenced by environment variable "${privateKeySecretId}" not found`);
-  }
-}
-
-export async function createJWT(clientId: string): Promise<string> {
+}> {
   const tNow = Math.floor(Date.now() / 1000);
   const tEnd = tNow + 300;
   const message: JWTBodyOptions = {
     iss: clientId,
     sub: clientId,
-    aud: tokenEndpoint,
+    aud: aud,
     jti: uuidv4(),
     nbf: tNow,
     iat: tNow,
     exp: tEnd
   };
 
-  const privateKey = await getPrivateKey();
-  const signature = sign(message, privateKey, { algorithm: 'RS384' });
-  return signature;
-}
-export async function fetchBackendToken(clientId: string) {
-  const token = await createJWT(clientId);
-  const tokenResponse = await fetchAuthToken({
-    grant_type: "client_credentials",
-    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-    client_assertion: token
-  });
-  return tokenResponse;
+  const tagKey = roleTag.Key;
+  if (tagKey === 'SecretAccess') {
+    return await signJWTWithSecret(roleTag, message);
+  }
+
+  if (tagKey === 'KMSAccess') {
+    return await signJWTWithKMS(roleTag, message);
+  }
+
+  throw new Error(`Tag with key ${tagKey} is unsupported`)
 }
 
-export async function fetchAuthToken(params: { grant_type: string; } & Record<string, string>, authorization?: { Authorization: string; }) {
-  const tokenFetchResponse = await fetch(tokenEndpoint, {
+export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeaders, eventRequestContext: APIGatewayEventRequestContextWithAuthorizer<{
+  [name: string]: any;
+}>) {
+  const apiId = process.env.API_ID;
+  assert(apiId, 'An apiId env variable must be included in the request (for the token endpoint)')
+  const emrType = eventHeaders.emrType
+  assert(emrType, 'An emrType header must be included in the request')
+  const clientId = eventHeaders.clientId
+  assert(clientId, 'A clientId header must be included in the request')
+
+  const apiData = await getApiData(apiId, emrType)
+  const roleArn = getRoleArn(eventRequestContext);
+  const roleTag = await getTagForRole(roleArn);
+
+  const { token, emrPath } = await createJWT(clientId, apiData.aud, roleTag);
+
+  const tokenResponse = await fetchAuthToken(clientId, apiData.invokeUrl, {
+    grant_type: "client_credentials",
+    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+    client_assertion: token,
+    scope: "system/Patient.read system/Group.read"
+  });
+  return { tokenResponse, emrPath };
+}
+
+export async function fetchAuthToken(clientId: string, tokenEndpoint: string, params: { grant_type: string; } & Record<string, string>, authorization?: { Authorization: string; }) {
+  const fetchParams: RequestInit = {
     method: "POST",
     headers: {
       accept: "application/x-www-form-urlencoded",
       ...(authorization ?? {})
     },
-    body: new URLSearchParams(params)
-  });
+    body: (new URLSearchParams(params)),
+  };
+
+  const tokenFetchResponse = await fetch(tokenEndpoint, fetchParams);
+  if (!tokenFetchResponse.ok) throw new Error(JSON.stringify(
+    {
+      status: tokenFetchResponse.status,
+      text: await tokenFetchResponse.text(),
+      statusText: tokenFetchResponse.statusText,
+      clientId: clientId
+    }
+  ))
   const tokenResponse = await (tokenFetchResponse.json() as Promise<TokenResponse>);
   return tokenResponse;
 }
-

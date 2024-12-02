@@ -11,8 +11,23 @@
       },
       "lambda": {
         "runtime": "nodejs18.x",
-        "payload": {},
-        "environmentVariables": {}
+        "payload": {
+          "json": {
+            "headers": {
+              "clientId": "71acdb69-78ea-4cfb-b1ba-edf86fe856ce",
+              "emrType": "epic"
+            },
+            "requestContext": {
+              "identity": {
+                "userArn": "arn:aws:sts::105227342372:assumed-role/josh-epic-sandbox-71acdb69-token-getter/APIGatewaySession"
+              }
+            }
+          }
+        },
+        "environmentVariables": {
+          "API_ID": "1bl3p7pq76",
+          "REGION": "us-east-2"
+        }
       }
     }
   ]
