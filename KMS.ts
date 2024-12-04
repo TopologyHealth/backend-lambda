@@ -20,7 +20,7 @@ export async function signJWTWithKMS(roleTag: Tag, messagePayload: JWTBodyOption
   const message = `${encodedHeader}.${encodedPayload}`;
   const messageBuffer = Buffer.from(message);
 
-  const kmsClient = new KMSClient({ region: "us-east-2" });
+  const kmsClient = new KMSClient({ region: process.env.REGION ?? "us-east-2" });
   const input: SignCommandInput = {
     KeyId: kmsID,
     Message: messageBuffer,

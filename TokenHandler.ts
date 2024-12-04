@@ -58,6 +58,8 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
   assert(emrType, 'An emrType header must be included in the request')
   const clientId = eventHeaders.clientId
   assert(clientId, 'A clientId header must be included in the request')
+  const scopes = eventHeaders.scopes
+  assert(scopes, 'A scopes header must be included in the request')
 
   const apiData = await getApiData(apiId, emrType)
   const roleArn = getRoleArn(eventRequestContext);
@@ -69,7 +71,7 @@ export async function fetchBackendToken(eventHeaders: APIGatewayProxyEventHeader
     grant_type: "client_credentials",
     client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     client_assertion: token,
-    scope: "system/Patient.read system/Group.read"
+    scope: scopes
   });
   return { tokenResponse, emrPath };
 }
