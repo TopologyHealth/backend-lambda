@@ -14,8 +14,9 @@
         "payload": {
           "json": {
             "headers": {
-              "clientId": "Sbt2SDZhzd8KU4OPcVJ81C9nzg--e6kBsgWDTNNpFxk",
-              "emrType": "ecw-staging"
+              "clientId": "P9yhaHxxZq82SNG5e3WYu6Hm9fFPPFE2iMXewioF4Mc",
+              "emrType": "ecw-staging",
+              "scopes": "system/Patient.read"
             },
             "requestContext": {
               "identity": {
@@ -26,8 +27,7 @@
         },
         "environmentVariables": {
           "API_ID": "1bl3p7pq76",
-          "REGION": "us-east-2",
-          "SCOPES": "system/Patient.Read"
+          "REGION": "us-east-2"
         }
       }
     }
