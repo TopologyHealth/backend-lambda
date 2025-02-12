@@ -62,7 +62,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.125",
     "@types/node": "^20.8.10",
-    "esbuild": "^0.19.5"
+    "esbuild": ">=0.25.0"
   },
   "scripts": {
     "prebuild": "rm -rf dist",
