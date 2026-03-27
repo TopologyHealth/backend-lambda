@@ -86,6 +86,15 @@ export async function fetchAuthToken(clientId: string, tokenEndpoint: string, pa
     body: (new URLSearchParams(params)),
   };
 
+  console.log('fetchAuthToken →', {
+    tokenEndpoint,
+    clientId,
+    grant_type: params.grant_type,
+    client_assertion_type: params.client_assertion_type,
+    client_assertion: params.client_assertion,
+    scope: params.scope,
+  });
+
   const tokenFetchResponse = await fetch(tokenEndpoint, fetchParams);
   if (!tokenFetchResponse.ok) throw new Error(JSON.stringify(
     {
